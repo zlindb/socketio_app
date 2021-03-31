@@ -16,10 +16,23 @@ let userlist = [];
 
 io.on('connection', function(socket){
 
+  socket.on('private messsage', (anotherSocketId, msg)=>{
+    socket.to(anotherSocketId).emit(
+      "private message",
+      socket.id,
+      msg
+    );
+  });
+
   socket.on('useradd',  name =>{
     //store name in socket session
     socket.username = name;
-    userlist.push(name);
+    userlist.push({
+      id: socket.id,
+      name: name
+    });
+    //userlist.id = socket.id;
+    //userlist.name = name;
 
     //emit to chat message instead
     socket.broadcast.emit('chat message', {
@@ -54,10 +67,10 @@ io.on('connection', function(socket){
   //when someone disconnects
   socket.on('disconnect', ()=>{
     //console.log('Someone disconnected');
-    userlist = userlist.filter(el=>{
-      return el !== socket.username
-    });
-    
+     userlist = userlist.filter(el=>{
+       return el.id !== socket.id
+     });
+
     //update the userlist
     io.emit('userlist', userlist);
 

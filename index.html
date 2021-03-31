@@ -7,6 +7,7 @@
     <style>
   body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 
+  .container{ }
   #user-list {
     margin:0;
     padding:0.25rem;
@@ -28,45 +29,80 @@
   #messages { list-style-type: none; margin: 0; padding: 0; }
   #messages > li { padding: 0.5rem 1rem; }
   #messages > li:nth-child(odd) { background: #efefef; }
+
+  .room-private-container{
+    border:1px solid;
+    width:500px;
+
+  }
+  .user-list-private{
+
+  }
+  form.privateChatRoom{
+    background: rgba(0, 0, 0, 0.15);
+    padding: 0.25rem;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    height: 3rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+  }
+  .privateChatRoom > button{
+    background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 2px; outline: none; color: #fff
+  }
+  .privateChatRoom input{
+    border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem;
+  }
+  .privateChatRoom > input:focus { outline: none; }
+
 </style>
 
   </head>
   <body>
 
-  <ul id = 'user-list'></ul>
-  <ul id = 'messages'></ul>
-
-  <div id="status"></div>
-    <form id='form' action="">
-      <label id = 'name' for="input"></label>
-      <input id="input" autocomplete="off" name = 'input'><button name="send">Send</button>
+  <div class="room-private-container">
+    <ul class = 'user-list-private'><li>lists</li></ul>
+    <ul class = 'messages-private'><li>message</li></ul>
+    <form class='privateChatRoom'>
+      <label class='name-private'>name</label>
+      <input class='input-private'><button name="send">send</button>
     </form>
+  </div>
 
+  <div class = 'container'>
+    <ul id = 'user-list'></ul>
+    <ul id = 'messages'></ul>
+
+    <div id="status"></div>
+      <form id='form' action="">
+        <label id = 'name' for="input"></label>
+        <input id="input" autocomplete="off" name = 'input'><button name="send">Send</button>
+      </form>
+  </div>
     <!-- exposed as the io namespace build or require("socket.io-client")-->
     <script src="/socket.io/socket.io.js"></script>
     <script>
       let nickname = prompt("nickname", "user");
       var socket = io();
 
+      if(nickname){
+        //when name is entered, send to server
+        socket.emit('useradd', nickname);
+      }
+      else{ location.reload(); }
+
       let messages = document.getElementById('messages');
       let form = document.getElementById('form')
       let input = document.getElementById('input');
-      let userlist = document.getElementById('user-list');
+      let user_list = document.getElementById('user-list');
 
       document.getElementById('name').textContent = nickname;
       //let name = document.getElementById('name');
       let status = document.getElementById('status');
 
-      //emitting events
       input.focus();
-
-      if(nickname){
-        //when name is entered, send to server
-        socket.emit('useradd', nickname);
-      }
-      else{
-        location.reload();
-      }
 
       form.addEventListener('submit', (e)=>{
         e.preventDefault();
@@ -84,12 +120,13 @@
         socket.emit('typing');
       });
 
-      socket.on('userlist', list=>{
-        //appendMsg(list, ' connected');
+      socket.on('userlist', userlist=>{
         //reset list
-        userlist.textContent = '';
-        for(let i=0;i<list.length;++i){
-            appendUserList(list[i]);
+        user_list.textContent = '';
+        //append
+
+        for(let i=0;i<userlist.length;++i){
+            appendUserList(userlist[i]);
         }
       });
 
@@ -106,10 +143,17 @@
         window.scrollTo(0, document.body.scrollHeight);
       });
 
-      function appendUserList(name){
-        let span = document.createElement('li');
-        span.textContent = name;
-        userlist.appendChild(span);
+      function appendUserList(obj){
+        let li = document.createElement('li');
+        let href = document.createElement('a');
+        href.setAttribute('href', '#');
+        href.setAttribute('data-id', obj.id)
+        href.textContent = obj.name;
+
+
+        li.appendChild(href);
+
+        user_list.appendChild(li);
       }
 
       //name from socket.username
