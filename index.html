@@ -3,70 +3,19 @@
   <head>
     <meta charset="utf-8">
     <title>Hello Socket IO</title>
-
-    <style>
-  body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-
-  .container{ }
-  #user-list {
-    margin:0;
-    padding:0.25rem;
-    display:flex;
-    min-height:25px;
-    background: rgba(0, 0, 0, 0.15);
-  }
-  #user-list li{
-    display:inline;
-    padding-right:20px;
-  }
-  #status {position:fixed; bottom:3rem; left:0; right:0; display:flex}
-  #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
-  #name { flex-grow:0.001; border: none; margin:0.1.5rem; padding:0 2rem; font-size:1.5rem}
-  #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
-  #input:focus { outline: none; }
-  #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
-
-  #messages { list-style-type: none; margin: 0; padding: 0; }
-  #messages > li { padding: 0.5rem 1rem; }
-  #messages > li:nth-child(odd) { background: #efefef; }
-
-  .room-private-container{
-    border:1px solid;
-    width:500px;
-
-  }
-  .user-list-private{
-
-  }
-  form.privateChatRoom{
-    background: rgba(0, 0, 0, 0.15);
-    padding: 0.25rem;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    height: 3rem;
-    box-sizing: border-box;
-    backdrop-filter: blur(10px);
-  }
-  .privateChatRoom > button{
-    background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 2px; outline: none; color: #fff
-  }
-  .privateChatRoom input{
-    border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem;
-  }
-  .privateChatRoom > input:focus { outline: none; }
-
-</style>
+    <link rel='stylesheet' href='/css/style.css'>
 
   </head>
   <body>
 
   <div class="room-private-container">
-    <ul class = 'user-list-private'><li>lists</li></ul>
-    <ul class = 'messages-private'><li>message</li></ul>
+  <!--  <ul class = 'user-list-private'><li>lists</li></ul> -->
+    <ul class = 'messages-private'><li>test</li></ul>
+
     <form class='privateChatRoom'>
-      <label class='name-private'>name</label>
+      <label>To:</label>
+      <input class='to-private' name="to_private" value="testname">
+      <label>msg:</label>
       <input class='input-private'><button name="send">send</button>
     </form>
   </div>
@@ -76,19 +25,18 @@
     <ul id = 'messages'></ul>
 
     <div id="status"></div>
-      <form id='form' action="">
-        <label id = 'name' for="input"></label>
-        <input id="input" autocomplete="off" name = 'input'><button name="send">Send</button>
-      </form>
+    <form id='form' action="">
+      <label id = 'name' for="input"></label>
+      <input id="input" autocomplete="off" name = 'input'><button name="send">Send</button>
+    </form>
   </div>
     <!-- exposed as the io namespace build or require("socket.io-client")-->
     <script src="/socket.io/socket.io.js"></script>
     <script>
+
       let nickname = prompt("nickname", "user");
       var socket = io();
-
-      if(nickname){
-        //when name is entered, send to server
+      if(nickname){ //when name is entered, send to server
         socket.emit('useradd', nickname);
       }
       else{ location.reload(); }
@@ -96,13 +44,13 @@
       let messages = document.getElementById('messages');
       let form = document.getElementById('form')
       let input = document.getElementById('input');
+      input.focus();
+
       let user_list = document.getElementById('user-list');
 
       document.getElementById('name').textContent = nickname;
       //let name = document.getElementById('name');
       let status = document.getElementById('status');
-
-      input.focus();
 
       form.addEventListener('submit', (e)=>{
         e.preventDefault();
@@ -116,17 +64,15 @@
       });
 
       input.addEventListener('keydown', (e)=>{
-        //user is typing message
-        socket.emit('typing');
+        socket.emit('typing');  //user is typing message
       });
 
-      socket.on('userlist', userlist=>{
-        //reset list
+      socket.on('userlist', async userlist=>{
+        //reset dom user_list
         user_list.textContent = '';
         //append
-
         for(let i=0;i<userlist.length;++i){
-            appendUserList(userlist[i]);
+            appendUserList(user_list, userlist[i]);
         }
       });
 
@@ -143,17 +89,25 @@
         window.scrollTo(0, document.body.scrollHeight);
       });
 
-      function appendUserList(obj){
+      function appendUserList(node, obj){
         let li = document.createElement('li');
         let href = document.createElement('a');
         href.setAttribute('href', '#');
         href.setAttribute('data-id', obj.id)
         href.textContent = obj.name;
 
+        //add eventlistner upon clicks
+        href.addEventListener('click', (e)=>{
+          e.preventDefault();
+          let socket_target_id = e.target.getAttribute('data-id');
+
+          //get private_room
+          let private_room_input = document.querySelectorAll('.privateChatRoom input.to-private')[0];
+          private_room_input.value = socket_target_id;
+        });
 
         li.appendChild(href);
-
-        user_list.appendChild(li);
+        node.appendChild(li);
       }
 
       //name from socket.username
@@ -162,6 +116,9 @@
         item.textContent = name + ": " + msg;
         messages.appendChild(item);
       }
+
     </script>
+    <script src="/javascript/private_room.js"></script>
+
   </body>
 </html>

@@ -5,10 +5,11 @@ const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
+app.use(express.static(path.join(__dirname,'public')));
+
 app.get('/', function(req, res){
   res.sendFile(path.join(__dirname + '/index.html'));
-//  res.end();
-})
+});
 
 let userlist = [];
 //listen on the connection event for incoming socket
@@ -16,12 +17,14 @@ let userlist = [];
 
 io.on('connection', function(socket){
 
-  socket.on('private messsage', (anotherSocketId, msg)=>{
-    socket.to(anotherSocketId).emit(
-      "private message",
-      socket.id,
-      msg
-    );
+  socket.on('private message', (msg)=>{
+    console.log(msg.id, msg.msg);
+
+    socket.to(msg.id).emit(
+       "private message",
+       socket.id,
+       msg.msg
+     );
   });
 
   socket.on('useradd',  name =>{
